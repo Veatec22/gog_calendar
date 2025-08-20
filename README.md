@@ -31,3 +31,11 @@ This project served as my **introduction to PHP development**.
 |-----------------------|-----------------------------|------------------------------|
 | ![Timeline View](assets/img_1.png) | ![Personal Watchlist](assets/img_2.png) | ![Calendar Integration](assets/img_3.png) |
 
+## How to run
+
+Assuming you have PHP, Composer and Symfony CLI installed, after cloning the repository, you can run the project with the following commands:
+
+```bash
+composer install
+symfony server:start
+```
