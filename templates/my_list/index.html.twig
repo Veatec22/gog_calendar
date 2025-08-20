@@ -1,0 +1,545 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My List - GOG Calendar{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* Enhanced FullCalendar theme matching the overall design */
+        :root {
+            --fc-bg-color: var(--gog-card-bg);
+            --fc-border-color: var(--gog-border);
+            --fc-text-color: var(--gog-text);
+            --fc-day-header-bg-color: var(--gog-purple-dark);
+            --fc-today-bg-color: rgba(123, 45, 142, 0.2);
+            --fc-event-bg-color: var(--gog-purple);
+            --fc-event-border-color: var(--gog-purple-light);
+        }
+
+        #calendar-view .fc {
+            background-color: var(--fc-bg-color);
+            color: var(--fc-text-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        #calendar-view .fc .fc-col-header-cell {
+            background-color: var(--fc-day-header-bg-color);
+            border-color: var(--fc-border-color);
+            color: white !important;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            padding: 1rem 0.5rem;
+        }
+        
+        #calendar-view .fc .fc-col-header-cell a {
+            color: white !important;
+            text-decoration: none !important;
+        }
+        
+        #calendar-view .fc .fc-daygrid-day-number {
+            color: var(--fc-text-color);
+            font-weight: 600;
+            padding: 0.5rem;
+        }
+        
+        #calendar-view .fc .fc-daygrid-day {
+            border-color: var(--fc-border-color);
+            min-height: 120px;
+        }
+
+        #calendar-view .fc .fc-day-today {
+            background-color: var(--fc-today-bg-color) !important;
+        }
+
+        #calendar-view .fc-toolbar-title {
+            color: var(--gog-purple-light);
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+        
+        #calendar-view .fc .fc-button {
+            background: var(--gog-purple);
+            border: 1px solid var(--gog-purple-light);
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        #calendar-view .fc .fc-button:hover:not(:disabled) {
+            background: var(--gog-purple-light);
+            border-color: var(--gog-purple-light);
+            transform: translateY(-1px);
+        }
+        
+        #calendar-view .fc .fc-button:disabled {
+            background: var(--gog-card-bg);
+            border-color: var(--gog-border);
+            color: var(--gog-text-muted);
+        }
+
+        /* Enhanced event styling */
+        #calendar-view .fc-event {
+            background: linear-gradient(135deg, var(--gog-purple) 0%, var(--gog-purple-light) 100%) !important;
+            border: 1px solid var(--gog-purple-light) !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            padding: 4px 8px !important;
+            margin: 2px !important;
+            box-shadow: 0 2px 8px rgba(123, 45, 142, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        #calendar-view .fc-event:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(123, 45, 142, 0.5);
+        }
+
+        #calendar-view .fc-event-main {
+            display: flex;
+            align-items: center;
+        }
+
+        #calendar-view .fc-event-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: white;
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
+        
+        #calendar-view .fc-event-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        /* View toggle buttons */
+        .view-toggle-container {
+            background: var(--gog-card-bg);
+            border-radius: 10px;
+            padding: 0.5rem;
+            border: 1px solid var(--gog-border);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .view-toggle-container .btn {
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        /* Game stats */
+        .game-stats {
+            background: var(--gog-card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--gog-border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gog-purple-light);
+        }
+        
+        .stat-label {
+            color: var(--gog-text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Empty state styling */
+        .empty-state {
+            background: var(--gog-card-bg);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            border: 2px dashed var(--gog-border);
+            margin: 2rem 0;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gog-text-muted);
+            margin-bottom: 1rem;
+        }
+        
+        /* Filter and sort controls */
+        .controls-panel {
+            background: var(--gog-card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--gog-border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .filter-label {
+            color: var(--gog-text);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-select-custom {
+            background: var(--gog-bg);
+            border: 1px solid var(--gog-border);
+            border-radius: 8px;
+            color: var(--gog-text);
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-select-custom:focus {
+            border-color: var(--gog-purple-light);
+            box-shadow: 0 0 0 3px rgba(123, 45, 142, 0.2);
+            background: var(--gog-bg);
+            color: var(--gog-text);
+        }
+        
+        .form-select-custom option {
+            background: var(--gog-bg);
+            color: var(--gog-text);
+        }
+        
+        .btn-reset {
+            background: var(--gog-border);
+            border: none;
+            color: var(--gog-text);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-reset:hover {
+            background: var(--gog-text-muted);
+            color: white;
+        }
+        
+        .results-info {
+            color: var(--gog-text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .results-count {
+            background: var(--gog-purple);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+    </style>
+{% endblock %}
+
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableView = document.getElementById('table-view');
+            const calendarView = document.getElementById('calendar-view');
+            const btnTable = document.getElementById('btn-table');
+            const btnCalendar = document.getElementById('btn-calendar');
+            const calendarEl = document.getElementById('calendar');
+
+            function hasGames() {
+                return calendarEl && calendarEl.dataset.games && JSON.parse(calendarEl.dataset.games).length > 0;
+            }
+
+            function showView(view) {
+                if (view === 'table') {
+                    tableView.style.display = 'block';
+                    if (calendarView) calendarView.style.display = 'none';
+                    btnTable.classList.add('active');
+                    btnCalendar.classList.remove('active');
+                    localStorage.setItem('gogCalendar_preferredView', 'table');
+                } else if (view === 'calendar') {
+                    if (hasGames()) {
+                        tableView.style.display = 'none';
+                        calendarView.style.display = 'block';
+                        btnTable.classList.remove('active');
+                        btnCalendar.classList.add('active');
+                        localStorage.setItem('gogCalendar_preferredView', 'calendar');
+                        
+                        setTimeout(() => {
+                            initCalendar();
+                            if (calendar) calendar.render();
+                        }, 100);
+                    }
+                }
+            }
+            
+            function initCalendar() {
+                if (calendar) {
+                    calendar.destroy();
+                    calendar = null;
+                }
+                
+                if (hasGames() && calendarEl) {
+                    const gamesData = JSON.parse(calendarEl.dataset.games);
+                    
+                    const events = gamesData.map(game => ({
+                        id: game.id,
+                        title: game.title,
+                        start: game.releaseDate,
+                        allDay: true,
+                        extendedProps: {
+                            genre: game.genre,
+                            price: game.price,
+                            description: game.description || ''
+                        }
+                    }));
+
+                    calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        height: 'auto',
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: ''
+                        },
+                        events: events,
+                        dayMaxEvents: 3,
+                        moreLinkClick: 'popover',
+                        eventDisplay: 'block',
+                        eventContent: function(info) {
+                            let container = document.createElement('div');
+                            container.classList.add('fc-event-main');
+                            
+                            let dot = document.createElement('div');
+                            dot.classList.add('fc-event-dot');
+                            
+                            let title = document.createElement('div');
+                            title.classList.add('fc-event-title');
+                            title.innerHTML = info.event.title;
+                            title.title = `${info.event.title} - ${info.event.extendedProps.genre} - ${info.event.extendedProps.price} PLN`;
+                            
+                            container.appendChild(dot);
+                            container.appendChild(title);
+                            
+                            return { domNodes: [container] };
+                        },
+                        eventClick: function(info) {
+                            const event = info.event;
+                            const props = event.extendedProps;
+                            alert(`${event.title}\n\nGenre: ${props.genre}\nPrice: ${props.price} PLN\nRelease: ${event.start.toLocaleDateString()}\n\n${props.description}`);
+                        },
+                        initialDate: new Date(),
+                        windowResize: function() {
+                            calendar.updateSize();
+                        }
+                    });
+                }
+            }
+
+            let calendar = null;
+
+            if (btnTable) btnTable.addEventListener('click', () => showView('table'));
+            if (btnCalendar) btnCalendar.addEventListener('click', () => showView('calendar'));
+            
+            const savedView = localStorage.getItem('gogCalendar_preferredView') || 'table';
+            showView(savedView);
+            
+            document.querySelectorAll('.alert').forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="page-header">
+        <h1><i class="fas fa-heart me-3"></i>My List</h1>
+        <p>Your personal watchlist of upcoming premieres. Never miss a release date!</p>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{% if label == 'success' %}check-circle{% elseif label == 'info' %}info-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    
+    {% if totalGames > 0 %}
+        <!-- Filter and Sort Controls -->
+        <div class="controls-panel">
+            <form method="GET" action="{{ path('app_my_list') }}" id="filterForm">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label class="filter-label" for="genreFilter">
+                                <i class="fas fa-filter me-2"></i>Filter by Genre
+                            </label>
+                            <select class="form-select-custom" id="genreFilter" name="genre" onchange="document.getElementById('filterForm').submit();">
+                                <option value="all" {{ currentGenre == '' or currentGenre == 'all' ? 'selected' : '' }}>All Genres</option>
+                                {% for genre in availableGenres %}
+                                    <option value="{{ genre }}" {{ currentGenre == genre ? 'selected' : '' }}>{{ genre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label class="filter-label" for="sortSelect">
+                                <i class="fas fa-sort me-2"></i>Sort by
+                            </label>
+                            <select class="form-select-custom" id="sortSelect" name="sort" onchange="document.getElementById('filterForm').submit();">
+                                <option value="date_asc" {{ currentSort == 'date_asc' ? 'selected' : '' }}>Release Date (Earliest)</option>
+                                <option value="date_desc" {{ currentSort == 'date_desc' ? 'selected' : '' }}>Release Date (Latest)</option>
+                                <option value="title_asc" {{ currentSort == 'title_asc' ? 'selected' : '' }}>Title (A-Z)</option>
+                                <option value="title_desc" {{ currentSort == 'title_desc' ? 'selected' : '' }}>Title (Z-A)</option>
+                                <option value="price_asc" {{ currentSort == 'price_asc' ? 'selected' : '' }}>Price (Low to High)</option>
+                                <option value="price_desc" {{ currentSort == 'price_desc' ? 'selected' : '' }}>Price (High to Low)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ path('app_my_list') }}" class="btn btn-reset w-100">
+                            <i class="fas fa-undo me-2"></i>Reset
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="results-info">
+                            <i class="fas fa-info-circle"></i>
+                            Showing <span class="results-count">{{ games|length }}</span> 
+                            of <span class="results-count">{{ totalGames }}</span> games
+                            {% if currentGenre and currentGenre != 'all' %}
+                                in <strong>{{ currentGenre }}</strong>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- View Toggle -->
+        <div class="d-flex justify-content-center mb-4">
+            <div class="view-toggle-container">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-secondary active" id="btn-table">
+                        <i class="fas fa-table me-2"></i>Table View
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-calendar">
+                        <i class="fas fa-calendar-alt me-2"></i>Calendar View
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table View -->
+        <div id="table-view">
+            {% if games|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-gamepad me-2"></i>Title</th>
+                                <th><i class="fas fa-tags me-2"></i>Genre</th>
+                                <th><i class="fas fa-dollar-sign me-2"></i>Price</th>
+                                <th><i class="fas fa-calendar-alt me-2"></i>Release Date</th>
+                                <th><i class="fas fa-cog me-2"></i>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for game in games %}
+                            <tr>
+                                <td class="fw-bold">{{ game.title }}</td>
+                                <td><span class="text-light">{{ game.genre }}</span></td>
+                                <td><span class="text-warning fw-bold">{{ game.price }} PLN</span></td>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-calendar me-1"></i>{{ game.releaseDate|date('M d, Y') }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ path('my_list_remove', {id: game.id}) }}" 
+                                       class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash me-1"></i>Remove
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <!-- Filtered Empty State -->
+                <div class="empty-state">
+                    <i class="fas fa-search"></i>
+                    <h4 class="text-light mb-3">No games match your filters</h4>
+                    <p class="text-light mb-4">Try adjusting your genre filter or sort settings to see more results.</p>
+                    <a href="{{ path('app_my_list') }}" class="btn btn-primary">
+                        <i class="fas fa-undo me-2"></i>Clear Filters
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Calendar View -->
+        <div id="calendar-view" style="display: none;">
+            {% if games|length > 0 %}
+                <div id='calendar' data-games='{{ games_json | e('html_attr') }}'></div>
+            {% else %}
+                <!-- Filtered Empty State for Calendar -->
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <h4 class="text-light mb-3">No games to display in calendar</h4>
+                    <p class="text-light mb-4">Your current filters have no matching games to show on the calendar.</p>
+                    <a href="{{ path('app_my_list') }}" class="btn btn-primary">
+                        <i class="fas fa-undo me-2"></i>Clear Filters
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-gamepad"></i>
+            <h4 class="text-light mb-3">Your list is empty</h4>
+            <p class="text-light mb-4">Start building your gaming calendar by adding upcoming releases!</p>
+            <a href="{{ path('app_upcoming') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Explore Upcoming Games
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
